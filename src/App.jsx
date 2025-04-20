@@ -7,7 +7,12 @@ import Modules from "./pages/Modules";
 import FinalExam from "./pages/FinalExam";
 import Results from "./pages/Results";
 import VerifySuccess from "./pages/VerifySuccess";
+import Quiz from "./pages/Quiz";
 import Navbar from "./components/Navbar";
+import CourseDetail from "./pages/CourseDetail";
+
+
+
 
 function App() {
   return (
@@ -21,7 +26,9 @@ function App() {
         <Route path="/modules" element={<Modules />} />
         <Route path="/final-exam" element={<FinalExam />} />
         <Route path="/results" element={<Results />} />
+        <Route path="/quiz" element={<Quiz />} />
         <Route path="/verify-success" element={<VerifySuccess />} />
+        <Route path="/course/:playlistId" element={<CourseDetail />} />
       </Routes>
     </>
   );
