@@ -1,38 +1,35 @@
-// src/components/ProtectedRoute.jsx
-import { useEffect, useState } from "react";
 import { Navigate } from "react-router-dom";
+import { useEffect, useState } from "react";
 import { supabase } from "../supabaseClient";
 
 export function ProtectedRoute({ children }) {
-  const [isAuthenticated, setIsAuthenticated] = useState(null);
+  const [session, setSession] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const checkAuth = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      setIsAuthenticated(!!session);
-    };
-
-    checkAuth();
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      setLoading(false);
+    });
   }, []);
 
-  if (isAuthenticated === null) return <div className="text-center p-10">Checking Authentication...</div>;
+  if (loading) return null;
 
-  return isAuthenticated ? children : <Navigate to="/login" />;
+  return session ? children : <Navigate to="/login" />;
 }
 
 export function GuestOnlyRoute({ children }) {
-  const [isAuthenticated, setIsAuthenticated] = useState(null);
+  const [session, setSession] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const checkAuth = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      setIsAuthenticated(!!session);
-    };
-
-    checkAuth();
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      setLoading(false);
+    });
   }, []);
 
-  if (isAuthenticated === null) return <div className="text-center p-10">Checking Authentication...</div>;
+  if (loading) return null;
 
-  return !isAuthenticated ? children : <Navigate to="/dashboard" />;
+  return session ? <Navigate to="/dashboard" /> : children;
 }

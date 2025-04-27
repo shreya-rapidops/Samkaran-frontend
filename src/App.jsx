@@ -1,8 +1,10 @@
-// src/App.jsx
 import { useEffect } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import { supabase } from "./supabaseClient";
+import { Toaster } from "react-hot-toast";
 
+
+// Pages and Components
 import Navbar from "./components/Navbar";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
@@ -14,6 +16,8 @@ import VerifySuccess from "./pages/VerifySuccess";
 import CourseDetail from "./pages/CourseDetail";
 import QuizLanding from "./pages/QuizLanding";
 import CourseQuiz from "./pages/CourseQuiz";
+
+// Access Control
 import { ProtectedRoute, GuestOnlyRoute } from "./components/ProtectedRoute";
 
 function App() {
@@ -27,32 +31,32 @@ function App() {
     });
 
     return () => {
-      listener.subscription.unsubscribe();
+      listener?.subscription.unsubscribe();
     };
   }, []);
 
   return (
     <>
       <Navbar />
+      <Toaster position="top-center" reverseOrder={false} />
       <Routes>
-        {/* Default route goes to /login */}
-        <Route path="/" element={<Navigate to="/login" />} />
-
-        {/* Public pages */}
+        {/* Guest only pages (login/register) */}
+        <Route path="/" element={<GuestOnlyRoute><Navigate to="/login" /></GuestOnlyRoute>} />
         <Route path="/login" element={<GuestOnlyRoute><Login /></GuestOnlyRoute>} />
         <Route path="/register" element={<GuestOnlyRoute><Register /></GuestOnlyRoute>} />
-
-        {/* Protected pages */}
+        
+        {/* Protected pages (only after login) */}
         <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
         <Route path="/modules" element={<ProtectedRoute><Modules /></ProtectedRoute>} />
         <Route path="/final-exam" element={<ProtectedRoute><FinalExam /></ProtectedRoute>} />
         <Route path="/results" element={<ProtectedRoute><Results /></ProtectedRoute>} />
+        <Route path="/verify-success" element={<ProtectedRoute><VerifySuccess /></ProtectedRoute>} />
         <Route path="/course/:playlistId" element={<ProtectedRoute><CourseDetail /></ProtectedRoute>} />
         <Route path="/quiz" element={<ProtectedRoute><QuizLanding /></ProtectedRoute>} />
         <Route path="/quiz/:categoryId" element={<ProtectedRoute><CourseQuiz /></ProtectedRoute>} />
-
-        {/* Other */}
-        <Route path="/verify-success" element={<VerifySuccess />} />
+        
+        {/* Fallback */}
+        <Route path="*" element={<Navigate to="/login" />} />
       </Routes>
     </>
   );

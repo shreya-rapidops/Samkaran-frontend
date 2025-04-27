@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../supabaseClient";
 
-// Hardcoded playlistId -> course title mapping
+// Playlist ID to Course Title Mapping
 const courseTitles = {
   "PLxyGaR3hEy3gk_Li5kx4pJ7TSOYE2EQPQ": "Mathematics",
   "PLNlwoEZAZrFzN0dMEeavCU2J3fGK0gQ1Jz": "Physics",
@@ -20,11 +20,8 @@ export default function Dashboard() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const getUser = async () => {
-      const {
-        data: { session },
-        error,
-      } = await supabase.auth.getSession();
+    async function fetchUserData() {
+      const { data: { session }, error } = await supabase.auth.getSession();
 
       if (!session || error) {
         navigate("/login");
@@ -33,14 +30,13 @@ export default function Dashboard() {
         fetchProgress(session.user.id);
         fetchNews();
       }
-
       setLoading(false);
-    };
+    }
 
-    getUser();
+    fetchUserData();
   }, [navigate]);
 
-  async function fetchProgress(userId) {
+  const fetchProgress = async (userId) => {
     const { data, error } = await supabase
       .from("video_progress")
       .select("playlist_id, watched")
@@ -62,22 +58,13 @@ export default function Dashboard() {
 
       setProgressData(progressList);
     }
-  }
+  };
 
   const fetchNews = () => {
     setNewsItems([
-      {
-        title: "📢 SSC CGL Notification Released – Apply Now!",
-        link: "https://ssc.nic.in/",
-      },
-      {
-        title: "📚 CUET 2025 Exam Dates Announced",
-        link: "https://cuet.samarth.ac.in/",
-      },
-      {
-        title: "🚀 ISRO Technician Recruitment – Open for All Boards",
-        link: "https://www.isro.gov.in/",
-      },
+      { title: "📢 SSC CGL Notification Released – Apply Now!", link: "https://ssc.nic.in/" },
+      { title: "📚 CUET 2025 Exam Dates Announced", link: "https://cuet.samarth.ac.in/" },
+      { title: "🚀 ISRO Technician Recruitment – Open for All Boards", link: "https://www.isro.gov.in/" },
     ]);
   };
 
@@ -96,10 +83,9 @@ export default function Dashboard() {
 
   return (
     <div className="p-10 max-w-4xl mx-auto">
+      {/* Top Section - Welcome and Logout */}
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold">
-          👋 Welcome, {userData?.firstName || "User"}!
-        </h1>
+        <h1 className="text-3xl font-bold">👋 Welcome, {userData?.firstName || "Student"}!</h1>
         <button
           onClick={handleLogout}
           className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700"
@@ -108,6 +94,7 @@ export default function Dashboard() {
         </button>
       </div>
 
+      {/* Student Information Card */}
       <div className="bg-white shadow p-6 rounded space-y-3 mb-8">
         <p><strong>📛 Full Name:</strong> {userData?.firstName} {userData?.lastName}</p>
         <p><strong>🏫 Board:</strong> {userData?.board}</p>
@@ -116,6 +103,7 @@ export default function Dashboard() {
         <p><strong>🆔 Student ID:</strong> <span className="text-blue-600">{userData?.studentId}</span></p>
       </div>
 
+      {/* Course Progress Section */}
       <div className="bg-white p-6 rounded shadow-md mb-8">
         <h2 className="text-xl font-bold mb-4">📈 Your Course Progress</h2>
         {progressData.length === 0 ? (
@@ -140,6 +128,7 @@ export default function Dashboard() {
         )}
       </div>
 
+      {/* News Section */}
       <div className="bg-white p-6 rounded shadow-md">
         <h2 className="text-xl font-bold mb-4">🗞️ Latest Exam & Govt Job News</h2>
         <ul className="list-disc list-inside">
@@ -155,3 +144,161 @@ export default function Dashboard() {
     </div>
   );
 }
+
+// import { useEffect, useState } from "react";
+// import { useNavigate } from "react-router-dom";
+// import { supabase } from "../supabaseClient";
+
+// // Hardcoded playlistId -> course title mapping
+// const courseTitles = {
+//   "PLxyGaR3hEy3gk_Li5kx4pJ7TSOYE2EQPQ": "Mathematics",
+//   "PLNlwoEZAZrFzN0dMEeavCU2J3fGK0gQ1Jz": "Physics",
+//   "PLVL0WQFkZbhVdStvLVoS3kU7RBaJR4JTR": "Chemistry",
+//   "PL_yLYIe6gA7vJ9a1V9o74s_BXrM81umhI": "General Studies",
+//   "PLvTTv60o7qj9YJU93vxkf570EQOfPnhwP": "Aptitude",
+//   "PLFra8itT--pbETkk84tCC8E3dBi1Imw78": "English",
+// };
+
+// export default function Dashboard() {
+//   const [userData, setUserData] = useState(null);
+//   const [loading, setLoading] = useState(true);
+//   const [progressData, setProgressData] = useState([]);
+//   const [newsItems, setNewsItems] = useState([]);
+//   const navigate = useNavigate();
+
+//   useEffect(() => {
+//     const getUser = async () => {
+//       const {
+//         data: { session },
+//         error,
+//       } = await supabase.auth.getSession();
+
+//       if (!session || error) {
+//         navigate("/login");
+//       } else {
+//         setUserData(session.user.user_metadata);
+//         fetchProgress(session.user.id);
+//         fetchNews();
+//       }
+
+//       setLoading(false);
+//     };
+
+//     getUser();
+//   }, [navigate]);
+
+//   async function fetchProgress(userId) {
+//     const { data, error } = await supabase
+//       .from("video_progress")
+//       .select("playlist_id, watched")
+//       .eq("user_id", userId);
+
+//     if (!error && data) {
+//       const courseMap = {};
+
+//       data.forEach((entry) => {
+//         if (!courseMap[entry.playlist_id]) courseMap[entry.playlist_id] = 0;
+//         if (entry.watched) courseMap[entry.playlist_id]++;
+//       });
+
+//       const progressList = Object.entries(courseMap).map(([id, count]) => ({
+//         title: courseTitles[id] || id,
+//         completedModules: count,
+//         totalModules: 5,
+//       }));
+
+//       setProgressData(progressList);
+//     }
+//   }
+
+//   const fetchNews = () => {
+//     setNewsItems([
+//       {
+//         title: "📢 SSC CGL Notification Released – Apply Now!",
+//         link: "https://ssc.nic.in/",
+//       },
+//       {
+//         title: "📚 CUET 2025 Exam Dates Announced",
+//         link: "https://cuet.samarth.ac.in/",
+//       },
+//       {
+//         title: "🚀 ISRO Technician Recruitment – Open for All Boards",
+//         link: "https://www.isro.gov.in/",
+//       },
+//     ]);
+//   };
+
+//   const handleLogout = async () => {
+//     await supabase.auth.signOut();
+//     navigate("/login");
+//   };
+
+//   if (loading) {
+//     return (
+//       <div className="flex justify-center items-center min-h-screen text-gray-600 text-lg">
+//         🔄 Loading your dashboard...
+//       </div>
+//     );
+//   }
+
+//   return (
+//     <div className="p-10 max-w-4xl mx-auto">
+//       <div className="flex justify-between items-center mb-6">
+//         <h1 className="text-3xl font-bold">
+//           👋 Welcome, {userData?.firstName || "User"}!
+//         </h1>
+//         <button
+//           onClick={handleLogout}
+//           className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700"
+//         >
+//           Logout
+//         </button>
+//       </div>
+
+//       <div className="bg-white shadow p-6 rounded space-y-3 mb-8">
+//         <p><strong>📛 Full Name:</strong> {userData?.firstName} {userData?.lastName}</p>
+//         <p><strong>🏫 Board:</strong> {userData?.board}</p>
+//         <p><strong>📍 City:</strong> {userData?.city}</p>
+//         <p><strong>🗺️ State:</strong> {userData?.state}</p>
+//         <p><strong>🆔 Student ID:</strong> <span className="text-blue-600">{userData?.studentId}</span></p>
+//       </div>
+
+//       <div className="bg-white p-6 rounded shadow-md mb-8">
+//         <h2 className="text-xl font-bold mb-4">📈 Your Course Progress</h2>
+//         {progressData.length === 0 ? (
+//           <p>No progress yet. Start learning today!</p>
+//         ) : (
+//           <ul>
+//             {progressData.map((course, idx) => (
+//               <li key={idx} className="mb-4">
+//                 <div className="flex justify-between">
+//                   <span>{course.title}</span>
+//                   <span>{course.completedModules}/{course.totalModules} Modules</span>
+//                 </div>
+//                 <div className="w-full bg-gray-200 h-2 rounded-full mt-1">
+//                   <div
+//                     className="bg-blue-500 h-2 rounded-full"
+//                     style={{ width: `${(course.completedModules / course.totalModules) * 100}%` }}
+//                   ></div>
+//                 </div>
+//               </li>
+//             ))}
+//           </ul>
+//         )}
+//       </div>
+
+//       <div className="bg-white p-6 rounded shadow-md">
+//         <h2 className="text-xl font-bold mb-4">🗞️ Latest Exam & Govt Job News</h2>
+//         <ul className="list-disc list-inside">
+//           {newsItems.map((news, index) => (
+//             <li key={index} className="mb-2">
+//               <a href={news.link} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
+//                 {news.title}
+//               </a>
+//             </li>
+//           ))}
+//         </ul>
+//       </div>
+//     </div>
+//   );
+// }
