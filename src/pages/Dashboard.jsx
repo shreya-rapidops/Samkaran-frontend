@@ -2,6 +2,16 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../supabaseClient";
 
+// Hardcoded playlistId -> course title mapping
+const courseTitles = {
+  "PLxyGaR3hEy3gk_Li5kx4pJ7TSOYE2EQPQ": "Mathematics",
+  "PLNlwoEZAZrFzN0dMEeavCU2J3fGK0gQ1Jz": "Physics",
+  "PLVL0WQFkZbhVdStvLVoS3kU7RBaJR4JTR": "Chemistry",
+  "PL_yLYIe6gA7vJ9a1V9o74s_BXrM81umhI": "General Studies",
+  "PLvTTv60o7qj9YJU93vxkf570EQOfPnhwP": "Aptitude",
+  "PLFra8itT--pbETkk84tCC8E3dBi1Imw78": "English",
+};
+
 export default function Dashboard() {
   const [userData, setUserData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -12,15 +22,15 @@ export default function Dashboard() {
   useEffect(() => {
     const getUser = async () => {
       const {
-        data: { user },
+        data: { session },
         error,
-      } = await supabase.auth.getUser();
+      } = await supabase.auth.getSession();
 
-      if (!user || error) {
+      if (!session || error) {
         navigate("/login");
       } else {
-        setUserData(user.user_metadata);
-        fetchProgress(user.id);
+        setUserData(session.user.user_metadata);
+        fetchProgress(session.user.id);
         fetchNews();
       }
 
@@ -28,9 +38,9 @@ export default function Dashboard() {
     };
 
     getUser();
-  }, []);
+  }, [navigate]);
 
-  const fetchProgress = async (userId) => {
+  async function fetchProgress(userId) {
     const { data, error } = await supabase
       .from("video_progress")
       .select("playlist_id, watched")
@@ -38,34 +48,36 @@ export default function Dashboard() {
 
     if (!error && data) {
       const courseMap = {};
+
       data.forEach((entry) => {
         if (!courseMap[entry.playlist_id]) courseMap[entry.playlist_id] = 0;
         if (entry.watched) courseMap[entry.playlist_id]++;
       });
+
       const progressList = Object.entries(courseMap).map(([id, count]) => ({
-        title: id, // Ideally map ID to course name
+        title: courseTitles[id] || id,
         completedModules: count,
         totalModules: 5,
       }));
+
       setProgressData(progressList);
     }
-  };
+  }
 
-  const fetchNews = async () => {
-    // Hardcoded news for now
+  const fetchNews = () => {
     setNewsItems([
       {
         title: "📢 SSC CGL Notification Released – Apply Now!",
-        link: "https://ssc.nic.in/"
+        link: "https://ssc.nic.in/",
       },
       {
         title: "📚 CUET 2025 Exam Dates Announced",
-        link: "https://cuet.samarth.ac.in/"
+        link: "https://cuet.samarth.ac.in/",
       },
       {
         title: "🚀 ISRO Technician Recruitment – Open for All Boards",
-        link: "https://www.isro.gov.in/"
-      }
+        link: "https://www.isro.gov.in/",
+      },
     ]);
   };
 

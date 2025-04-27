@@ -1,101 +1,157 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "../supabaseClient";
 
-const BOARDS = [
-  "CBSE", "CISCE", "NIOS", "IB", "CAIE", "MSBSHSE", "TNBSE", "UPMSP", "KSEEB", "WBBSE",
-  "RBSE", "GSEB", "BSEAP", "TBSE", "MPBSE", "BSEB", "BSE Odisha", "KBPE", "PSEB", "HBSE", "DBSE"
-];
+// Hardcoded playlistId -> course title mapping
+const courseTitles = {
+  "PLxyGaR3hEy3gk_Li5kx4pJ7TSOYE2EQPQ": "Mathematics",
+  "PLNlwoEZAZrFzN0dMEeavCU2J3fGK0gQ1Jz": "Physics",
+  "PLVL0WQFkZbhVdStvLVoS3kU7RBaJR4JTR": "Chemistry",
+  "PL_yLYIe6gA7vJ9a1V9o74s_BXrM81umhI": "General Studies",
+  "PLvTTv60o7qj9YJU93vxkf570EQOfPnhwP": "Aptitude",
+  "PLFra8itT--pbETkk84tCC8E3dBi1Imw78": "English",
+};
 
-export default function Register() {
-  const [form, setForm] = useState({
-    firstName: "", lastName: "", email: "", password: "", confirmPassword: "",
-    city: "", state: "", board: "", studentId: ""
-  });
-
-  const [message, setMessage] = useState("");
+export default function Dashboard() {
+  const [userData, setUserData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [progressData, setProgressData] = useState([]);
+  const [newsItems, setNewsItems] = useState([]);
+  const navigate = useNavigate();
 
   useEffect(() => {
-    generateStudentId();
-  }, []);
+    const getUser = async () => {
+      const {
+        data: { session },
+        error,
+      } = await supabase.auth.getSession();
 
-  const generateStudentId = async () => {
-    let { data, error } = await supabase
-      .from("students")
-      .select("studentId", { count: "exact" });
+      if (!session || error) {
+        navigate("/login");
+      } else {
+        setUserData(session.user.user_metadata);
+        fetchProgress(session.user.id);
+        fetchNews();
+      }
 
-    const nextId = (data?.length || 0) + 1;
-    const sid = "SID" + nextId.toString().padStart(4, "0");
-    setForm((prev) => ({ ...prev, studentId: sid }));
-  };
+      setLoading(false);
+    };
 
-  const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
-  };
+    getUser();
+  }, [navigate]);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  async function fetchProgress(userId) {
+    const { data, error } = await supabase
+      .from("video_progress")
+      .select("playlist_id, watched")
+      .eq("user_id", userId);
 
-    if (form.password !== form.confirmPassword) {
-      setMessage("❌ Passwords do not match.");
-      return;
+    if (!error && data) {
+      const courseMap = {};
+
+      data.forEach((entry) => {
+        if (!courseMap[entry.playlist_id]) courseMap[entry.playlist_id] = 0;
+        if (entry.watched) courseMap[entry.playlist_id]++;
+      });
+
+      const progressList = Object.entries(courseMap).map(([id, count]) => ({
+        title: courseTitles[id] || id,
+        completedModules: count,
+        totalModules: 5,
+      }));
+
+      setProgressData(progressList);
     }
+  }
 
-    const { data, error } = await supabase.auth.signUp({
-      email: form.email,
-      password: form.password,
-      options: {
-        data: {
-          firstName: form.firstName,
-          lastName: form.lastName,
-          city: form.city,
-          state: form.state,
-          board: form.board,
-          studentId: form.studentId,
-        },
+  const fetchNews = () => {
+    setNewsItems([
+      {
+        title: "📢 SSC CGL Notification Released – Apply Now!",
+        link: "https://ssc.nic.in/",
       },
-    });
-
-    if (!error) {
-      await supabase.from("students").insert([
-        {
-          studentId: form.studentId,
-          firstName: form.firstName,
-          lastName: form.lastName,
-          email: form.email,
-          city: form.city,
-          state: form.state,
-          board: form.board,
-        },
-      ]);
-      setMessage("✅ Registered successfully! Check your email to confirm.");
-    } else {
-      setMessage(`❌ ${error.message}`);
-    }
+      {
+        title: "📚 CUET 2025 Exam Dates Announced",
+        link: "https://cuet.samarth.ac.in/",
+      },
+      {
+        title: "🚀 ISRO Technician Recruitment – Open for All Boards",
+        link: "https://www.isro.gov.in/",
+      },
+    ]);
   };
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    navigate("/login");
+  };
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center min-h-screen text-gray-600 text-lg">
+        🔄 Loading your dashboard...
+      </div>
+    );
+  }
 
   return (
-    <div className="p-10 max-w-xl mx-auto">
-      <h1 className="text-2xl font-bold mb-6">🙋‍♂️ Student Registration</h1>
-      <form className="grid grid-cols-2 gap-4" onSubmit={handleSubmit}>
-        <input name="firstName" placeholder="First Name" onChange={handleChange} className="p-2 border rounded" required />
-        <input name="lastName" placeholder="Last Name" onChange={handleChange} className="p-2 border rounded" required />
-        <input name="email" type="email" placeholder="Email" onChange={handleChange} className="p-2 border rounded col-span-2" required />
-        <input name="city" placeholder="City" onChange={handleChange} className="p-2 border rounded" />
-        <input name="state" placeholder="State" onChange={handleChange} className="p-2 border rounded" />
-        <select name="board" onChange={handleChange} className="p-2 border rounded col-span-2" required>
-          <option value="">Select Educational Board</option>
-          {BOARDS.map((board) => (
-            <option key={board} value={board}>{board}</option>
+    <div className="p-10 max-w-4xl mx-auto">
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-3xl font-bold">
+          👋 Welcome, {userData?.firstName || "User"}!
+        </h1>
+        <button
+          onClick={handleLogout}
+          className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700"
+        >
+          Logout
+        </button>
+      </div>
+
+      <div className="bg-white shadow p-6 rounded space-y-3 mb-8">
+        <p><strong>📛 Full Name:</strong> {userData?.firstName} {userData?.lastName}</p>
+        <p><strong>🏫 Board:</strong> {userData?.board}</p>
+        <p><strong>📍 City:</strong> {userData?.city}</p>
+        <p><strong>🗺️ State:</strong> {userData?.state}</p>
+        <p><strong>🆔 Student ID:</strong> <span className="text-blue-600">{userData?.studentId}</span></p>
+      </div>
+
+      <div className="bg-white p-6 rounded shadow-md mb-8">
+        <h2 className="text-xl font-bold mb-4">📈 Your Course Progress</h2>
+        {progressData.length === 0 ? (
+          <p>No progress yet. Start learning today!</p>
+        ) : (
+          <ul>
+            {progressData.map((course, idx) => (
+              <li key={idx} className="mb-4">
+                <div className="flex justify-between">
+                  <span>{course.title}</span>
+                  <span>{course.completedModules}/{course.totalModules} Modules</span>
+                </div>
+                <div className="w-full bg-gray-200 h-2 rounded-full mt-1">
+                  <div
+                    className="bg-blue-500 h-2 rounded-full"
+                    style={{ width: `${(course.completedModules / course.totalModules) * 100}%` }}
+                  ></div>
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+
+      <div className="bg-white p-6 rounded shadow-md">
+        <h2 className="text-xl font-bold mb-4">🗞️ Latest Exam & Govt Job News</h2>
+        <ul className="list-disc list-inside">
+          {newsItems.map((news, index) => (
+            <li key={index} className="mb-2">
+              <a href={news.link} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
+                {news.title}
+              </a>
+            </li>
           ))}
-        </select>
-        <input name="password" type="password" placeholder="Password" onChange={handleChange} className="p-2 border rounded col-span-1" required />
-        <input name="confirmPassword" type="password" placeholder="Re-enter Password" onChange={handleChange} className="p-2 border rounded col-span-1" required />
-        <div className="col-span-2 text-sm text-gray-500">
-          Your Student ID: <b>{form.studentId || "Generating..."}</b>
-        </div>
-        <button className="col-span-2 bg-blue-600 text-white p-2 rounded hover:bg-blue-700">Register</button>
-      </form>
-      {message && <p className="mt-4 text-center text-sm">{message}</p>}
+        </ul>
+      </div>
     </div>
   );
 }
