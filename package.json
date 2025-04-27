@@ -7,8 +7,8 @@
     "dev": "vite",
     "build": "vite build",
     "predeploy": "npm run build && cp dist/index.html dist/404.html",
-    "deploy": "git add . && git commit -m 'Deploying updates' || echo 'Nothing to commit' && git push",
-    "lint": "eslint .",
+    "deploy": "npm run predeploy && git add . && git commit -m 'Deploying updates' || echo 'Nothing to commit' && git push",
+
     "preview": "vite preview"
     
   },
