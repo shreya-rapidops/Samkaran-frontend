@@ -8,14 +8,15 @@
     "build": "vite build",
     "predeploy": "npm run build && cp dist/index.html dist/404.html",
     "deploy": "npm run predeploy && git add . && git commit -m 'Deploying updates' || echo 'Nothing to commit' && git push",
-
     "preview": "vite preview"
-    
   },
   "homepage": "https://shreya-rapidops.github.io/Samkaran-frontend",
   "dependencies": {
+    "@headlessui/react": "^2.2.2",
     "@supabase/supabase-js": "^2.49.4",
     "@tailwindcss/aspect-ratio": "^0.4.2",
+    "framer-motion": "^12.9.2",
+    "lottie-react": "^2.4.1",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-hot-toast": "^2.5.2",
